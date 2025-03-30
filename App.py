@@ -14,21 +14,7 @@ def fetch_stock_data(tickers, start_date, end_date):
             return None
         
         st.write("Fetched Data Preview:", data.head())  # Debugging step
-        
-        # Handle MultiIndex if multiple tickers are provided
-        if isinstance(data.columns, pd.MultiIndex):
-            if 'Close' in data.columns.get_level_values(1):
-                data = data.xs('Close', axis=1, level=1, drop_level=True)
-            else:
-                st.error("Yahoo Finance did not return 'Close' prices. Check ticker symbols.")
-                return None
-        elif 'Close' in data.columns:
-            data = data[['Close']]
-        else:
-            st.error("No suitable stock data found. Check ticker symbols and dates.")
-            return None
-        
-        return data
+               
     except Exception as e:
         st.error(f"Error fetching data: {e}")
         return None
