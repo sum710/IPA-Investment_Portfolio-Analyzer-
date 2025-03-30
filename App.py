@@ -9,17 +9,13 @@ def fetch_stock_data(tickers, start_date, end_date):
     try:
         data = yf.download(tickers, start=start_date, end=end_date)
         
-        # Ensure 'Adj Close' or 'Close' columns exist
+        # Ensure 'Close' column exists
         if isinstance(data.columns, pd.MultiIndex):
-            if ('Adj Close' in data.columns.get_level_values(1)):
-                data = data.xs('Adj Close', axis=1, level=1, drop_level=True)
-            elif ('Close' in data.columns.get_level_values(1)):
+            if ('Close' in data.columns.get_level_values(1)):
                 data = data.xs('Close', axis=1, level=1, drop_level=True)
             else:
-                st.error("Yahoo Finance did not return 'Adj Close' or 'Close'. Check ticker symbols.")
+                st.error("Yahoo Finance did not return 'Close'. Check ticker symbols.")
                 return None
-        elif 'Adj Close' in data.columns:
-            data = data[['Adj Close']]
         elif 'Close' in data.columns:
             data = data[['Close']]
         else:
