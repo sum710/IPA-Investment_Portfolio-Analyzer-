@@ -9,9 +9,14 @@ def fetch_stock_data(tickers, start_date, end_date):
     try:
         data = yf.download(tickers, start=start_date, end=end_date)
         
+        # Check if data is empty
+        if data.empty:
+            st.error("No data fetched. Please check the ticker symbols and date range.")
+            return None
+        
         # Ensure 'Close' column exists
         if isinstance(data.columns, pd.MultiIndex):
-            if ('Close' in data.columns.get_level_values(1)):
+            if 'Close' in data.columns.get_level_values(1):
                 data = data.xs('Close', axis=1, level=1, drop_level=True)
             else:
                 st.error("Yahoo Finance did not return 'Close'. Check ticker symbols.")
@@ -38,7 +43,7 @@ def calculate_metrics(daily_returns, weights):
 # Streamlit UI
 st.title("📈 Investment Portfolio Analyzer")
 
-st.sidebar.header("User Input")
+st.sidebar.header("User  Input")
 tickers = st.sidebar.text_input("Enter Stock Tickers (comma-separated)", "AAPL, MSFT, GOOGL")
 start_date = st.sidebar.date_input("Start Date", pd.to_datetime("2020-01-01"))
 end_date = st.sidebar.date_input("End Date", pd.to_datetime("today"))
