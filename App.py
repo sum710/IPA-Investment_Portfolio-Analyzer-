@@ -8,11 +8,10 @@ import matplotlib.pyplot as plt
 def fetch_stock_data(tickers, start_date, end_date):
     try:
         data = yf.download(tickers, start=start_date, end=end_date)
-        st.write("Fetched Data Preview:", data.head())  # Debugging step
         
         # Handle MultiIndex if multiple tickers are provided
         if isinstance(data.columns, pd.MultiIndex):
-            if 'Adj Close' in data.columns.levels[1]:
+            if 'Adj Close' in data.columns.get_level_values(1):
                 data = data.xs('Adj Close', axis=1, level=1, drop_level=True)
             else:
                 st.error("Yahoo Finance did not return 'Adj Close'. Check ticker symbols.")
@@ -63,7 +62,7 @@ if st.sidebar.button("Analyze"):
         weights = st.sidebar.text_input("Enter Portfolio Weights (comma-separated)", "0.33, 0.33, 0.34")
         try:
             weights_list = [float(weight) for weight in weights.split(",")]
-            if len(weights_list) != len(tickers_list) or sum(weights_list) != 1.0:
+            if len(weights_list) != len(tickers_list) or not np.isclose(sum(weights_list), 1.0):
                 st.error("⚠ Weights must match stock count & sum to 1.")
             else:
                 portfolio_returns = (daily_returns * weights_list).sum(axis=1)
@@ -77,31 +76,6 @@ if st.sidebar.button("Analyze"):
                 cumulative_returns = (1 + portfolio_returns).cumprod()
                 st.subheader("📈 Cumulative Portfolio Returns")
                 st.line_chart(cumulative_returns)
-                
-                st.subheader("📊 50-Day & 200-Day Moving Averages")
-                ma_50 = stock_data.rolling(window=50).mean()
-                ma_200 = stock_data.rolling(window=200).mean()
-                plt.figure(figsize=(10, 5))
-                plt.plot(stock_data, label="Stock Prices", alpha=0.7)
-                plt.plot(ma_50, label="50-Day MA", linestyle="dashed")
-                plt.plot(ma_200, label="200-Day MA", linestyle="dashed")
-                plt.legend()
-                st.pyplot(plt)
-                
-                st.subheader("📊 Risk vs Return Scatter Plot")
-                avg_daily_returns = daily_returns.mean()
-                std_deviation = daily_returns.std()
-                plt.figure(figsize=(6, 4))
-                plt.scatter(std_deviation, avg_daily_returns, c="blue", label="Stocks")
-                plt.xlabel("Risk (Std Dev)")
-                plt.ylabel("Return (Mean Daily Return)")
-                plt.title("Risk vs Return")
-                for i, txt in enumerate(tickers_list):
-                    plt.annotate(txt, (std_deviation[i], avg_daily_returns[i]))
-                st.pyplot(plt)
-                
-                st.subheader("📄 Stock Data Table")
-                st.dataframe(stock_data)
                 
                 st.subheader("📊 Portfolio Weights Distribution")
                 fig, ax = plt.subplots()
