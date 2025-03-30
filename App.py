@@ -12,13 +12,11 @@ def fetch_stock_data(tickers, start_date, end_date):
         
         # Handle MultiIndex if multiple tickers are provided
         if isinstance(data.columns, pd.MultiIndex):
-            if 'Adj Close' in data.columns.levels[1]:
-                data = data.xs('Adj Close', axis=1, level=1, drop_level=True)
+            if 'Close' in data.columns.get_level_values(1):  # Use 'Close' instead of 'Adj Close'
+                data = data.xs('Close', axis=1, level=1, drop_level=True)
             else:
-                st.error("Yahoo Finance did not return 'Adj Close'. Check ticker symbols.")
+                st.error("Yahoo Finance did not return 'Close'. Check ticker symbols.")
                 return None
-        elif 'Adj Close' in data.columns:
-            data = data[['Adj Close']]
         elif 'Close' in data.columns:
             data = data[['Close']]
         else:
@@ -29,6 +27,8 @@ def fetch_stock_data(tickers, start_date, end_date):
     except Exception as e:
         st.error(f"Error fetching data: {e}")
         return None
+
+            
 
 # Function to calculate portfolio performance
 def calculate_metrics(daily_returns, weights):
