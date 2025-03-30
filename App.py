@@ -8,11 +8,18 @@ import numpy as np
 def fetch_stock_data(tickers, start_date, end_date):
     try:
         data = yf.download(tickers, start=start_date, end=end_date)
-        # Check if data is empty
-        if data.empty:
-            st.error("No data fetched. Please check the tickers and date range.")
+
+        # Debugging step: Print columns to verify what data is returned
+        st.write("Fetched Data Preview:", data.head())
+
+        # Ensure 'Adj Close' exists, fallback to 'Close' if missing
+        if 'Adj Close' in data:
+            return data[['Adj Close']]
+        elif 'Close' in data:
+            return data[['Close']]
+        else:
+            st.error("Stock data is missing. Please check the ticker symbols.")
             return None
-        return data['Adj Close']  # Return only the 'Adj Close' prices
     except Exception as e:
         st.error(f"Error fetching data: {e}")
         return None
@@ -26,10 +33,10 @@ def calculate_metrics(daily_returns, weights):
     return sharpe_ratio, max_drawdown, volatility
 
 # Streamlit app
-st.title("Stock Portfolio Analyzer")
+st.title("📈 Stock Portfolio Analyzer")
 
 # User input
-st.sidebar.header("User  Input")
+st.sidebar.header("User Input")
 tickers = st.sidebar.text_input("Enter Stock Tickers (comma-separated)", "AAPL, MSFT, GOOGL")
 start_date = st.sidebar.date_input("Start Date", pd.to_datetime("2020-01-01"))
 end_date = st.sidebar.date_input("End Date", pd.to_datetime("today"))
@@ -43,12 +50,12 @@ if st.sidebar.button("Analyze"):
 
     if stock_data is not None:
         # Display stock data
-        st.subheader("Stock Prices")
+        st.subheader("📊 Stock Prices Over Time")
         st.line_chart(stock_data)
 
         # Calculate daily returns
-        daily_returns = stock_data.pct_change()
-        st.subheader("Daily Returns")
+        daily_returns = stock_data.pct_change().dropna()
+        st.subheader("📉 Daily Returns")
         st.line_chart(daily_returns)
 
         # Portfolio performance
@@ -57,39 +64,58 @@ if st.sidebar.button("Analyze"):
 
         # Validate weights
         if sum(weights_list) != 1.0:
-            st.error("Weights must sum to 1. Please adjust your weights.")
+            st.error("⚠ Weights must sum to 1. Please adjust your weights.")
         else:
             # Calculate portfolio returns and metrics
             portfolio_returns = (daily_returns * weights_list).sum(axis=1)
             sharpe_ratio, max_drawdown, volatility = calculate_metrics(daily_returns, weights_list)
 
             # Display performance metrics
-            st.subheader("Performance Metrics")
-            st.write(f"*Sharpe Ratio:* {sharpe_ratio:.2f}")
-            st.write(f"*Maximum Drawdown:* {max_drawdown:.2%}")
-            st.write(f"*Annualized Volatility:* {volatility:.2%}")
+            st.subheader("📊 Performance Metrics")
+            st.write(f"📌 **Sharpe Ratio:** {sharpe_ratio:.2f}")
+            st.write(f"📌 **Maximum Drawdown:** {max_drawdown:.2%}")
+            st.write(f"📌 **Annualized Volatility:** {volatility:.2%}")
 
             # Cumulative returns
             cumulative_returns = (1 + portfolio_returns).cumprod()
-            st.subheader("Cumulative Portfolio Returns")
+            st.subheader("📈 Cumulative Portfolio Returns")
             st.line_chart(cumulative_returns)
 
+            # Moving averages (50-day & 200-day)
+            st.subheader("📊 50-Day & 200-Day Moving Averages")
+            ma_50 = stock_data.rolling(window=50).mean()
+            ma_200 = stock_data.rolling(window=200).mean()
+            plt.figure(figsize=(10, 5))
+            plt.plot(stock_data, label="Stock Prices", alpha=0.7)
+            plt.plot(ma_50, label="50-Day MA", linestyle="dashed")
+            plt.plot(ma_200, label="200-Day MA", linestyle="dashed")
+            plt.legend()
+            st.pyplot(plt)
+
+            # Risk vs Return scatter plot
+            st.subheader("📊 Risk vs Return Scatter Plot")
+            avg_daily_returns = daily_returns.mean()
+            std_deviation = daily_returns.std()
+            plt.figure(figsize=(6, 4))
+            plt.scatter(std_deviation, avg_daily_returns, c="blue", label="Stocks")
+            plt.xlabel("Risk (Standard Deviation)")
+            plt.ylabel("Return (Mean Daily Return)")
+            plt.title("Risk vs Return")
+            for i, txt in enumerate(tickers_list):
+                plt.annotate(txt, (std_deviation[i], avg_daily_returns[i]))
+            st.pyplot(plt)
+
             # Display stock data table
-            st.subheader("Stock Data Table")
+            st.subheader("📄 Stock Data Table")
             st.dataframe(stock_data)
 
-            # Average daily returns
-            avg_daily_returns = daily_returns.mean()
-            st.subheader("Average Daily Returns")
-            st.bar_chart(avg_daily_returns)
-
             # Pie chart for portfolio weights
-            st.subheader("Portfolio Weights")
+            st.subheader("📊 Portfolio Weights Distribution")
             fig, ax = plt.subplots()
             ax.pie(weights_list, labels=tickers_list, autopct='%1.1f%%', startangle=90)
             ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
             st.pyplot(fig)
 
 # Footer
-st.sidebar.markdown("### About")
-st.sidebar.markdown("This app allows you to analyze your stock portfolio by visualizing stock prices, daily returns, cumulative returns, average daily returns, and portfolio weights.")
+st.sidebar.markdown("### ℹ About")
+st.sidebar.markdown("This app analyzes your stock portfolio by visualizing stock prices, returns, risk-return tradeoff, and performance metrics.")
