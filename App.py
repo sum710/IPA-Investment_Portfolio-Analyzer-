@@ -8,14 +8,19 @@ import matplotlib.pyplot as plt
 def fetch_stock_data(tickers, start_date, end_date):
     try:
         data = yf.download(tickers, start=start_date, end=end_date)
+        
+        if data.empty:
+            st.error("No data was returned. Check ticker symbols and date range.")
+            return None
+        
         st.write("Fetched Data Preview:", data.head())  # Debugging step
         
         # Handle MultiIndex if multiple tickers are provided
         if isinstance(data.columns, pd.MultiIndex):
-            if 'Close' in data.columns.get_level_values(1):  # Use 'Close' instead of 'Adj Close'
+            if 'Close' in data.columns.get_level_values(1):
                 data = data.xs('Close', axis=1, level=1, drop_level=True)
             else:
-                st.error("Yahoo Finance did not return 'Close'. Check ticker symbols.")
+                st.error("Yahoo Finance did not return 'Close' prices. Check ticker symbols.")
                 return None
         elif 'Close' in data.columns:
             data = data[['Close']]
@@ -27,6 +32,7 @@ def fetch_stock_data(tickers, start_date, end_date):
     except Exception as e:
         st.error(f"Error fetching data: {e}")
         return None
+
 
             
 
