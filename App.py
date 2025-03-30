@@ -4,14 +4,25 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Function to fetch stock data
 def fetch_stock_data(tickers, start_date, end_date):
     try:
         data = yf.download(tickers, start=start_date, end=end_date)
-        return data['Adj Close']
+
+        # Debugging step: Show raw data
+        st.write("Raw Data:", data)
+
+        # Ensure 'Adj Close' exists, otherwise fallback to 'Close'
+        if 'Adj Close' in data:
+            return data[['Adj Close']]
+        elif 'Close' in data:
+            return data[['Close']]
+        else:
+            st.error("Stock data is missing. Please check the ticker symbols.")
+            return None
     except Exception as e:
         st.error(f"Error fetching data: {e}")
         return None
+
 
 # Function to calculate performance metrics
 def calculate_metrics(daily_returns, weights):
