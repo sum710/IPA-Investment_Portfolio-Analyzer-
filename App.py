@@ -4,23 +4,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Function to fetch stock data
-def fetch_stock_data(tickers, start_date, end_date):
-    try:
-        data = yf.download(tickers, start=start_date, end=end_date)
-        
-        if data.empty:
-            st.error("No data was returned. Check ticker symbols and date range.")
-            return None
-        
-        st.write("Fetched Data Preview:", data.head())  # Debugging step
-               
-    except Exception as e:
-        st.error(f"Error fetching data: {e}")
-        return None
-
-
-            
 
 # Function to calculate portfolio performance
 def calculate_metrics(daily_returns, weights):
