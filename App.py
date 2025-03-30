@@ -8,6 +8,10 @@ import numpy as np
 def fetch_stock_data(tickers, start_date, end_date):
     try:
         data = yf.download(tickers, start=start_date, end=end_date)
+        # Check if data is empty
+        if data.empty:
+            st.error("No data fetched. Please check the tickers and date range.")
+            return None
         return data['Adj Close']  # Return only the 'Adj Close' prices
     except Exception as e:
         st.error(f"Error fetching data: {e}")
